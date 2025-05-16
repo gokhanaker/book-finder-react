@@ -17,7 +17,13 @@ import axios from "axios";
 // Define more specific types for the API response
 interface Author {
   key: string;
+  name?: string;  // name might not be included in the response
+}
+
+interface AuthorDetails {
+  personal_name?: string;
   name: string;
+  key: string;
 }
 
 interface Description {
@@ -28,7 +34,8 @@ interface Description {
 interface BookDetails {
   key: string;
   title: string;
-  authors?: Author[];
+  authors?: Array<{ author: { key: string } }>;  // Work response format
+  author_name?: string[];  // Search response format
   description?: string | Description;
   publish_date?: string;
   covers?: number[];
@@ -47,10 +54,23 @@ const BookDetail: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const [book, setBook] = useState<BookDetails | null>(null);
+  const [authors, setAuthors] = useState<AuthorDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchAuthorDetails = async (authorKey: string) => {
+      try {
+        const response = await axios.get<AuthorDetails>(
+          `https://openlibrary.org${authorKey}.json`
+        );
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching author details:', error);
+        return null;
+      }
+    };
+
     const fetchBookDetails = async () => {
       if (!bookId) return;
 
@@ -67,13 +87,11 @@ const BookDetail: React.FC = () => {
             `https://openlibrary.org/books/${bookId}.json`
           );
           
-          // If this is a book, we need to fetch its work data
           if (response.data.works?.[0]?.key) {
             const workKey = response.data.works[0].key;
             const workResponse = await axios.get<BookDetails>(
               `https://openlibrary.org${workKey}.json`
             );
-            // Merge book and work data
             response.data = {
               ...response.data,
               ...workResponse.data,
@@ -82,6 +100,16 @@ const BookDetail: React.FC = () => {
         }
 
         setBook(response.data);
+
+        // Fetch author details
+        if (response.data.authors) {
+          const authorPromises = response.data.authors.map(
+            ({ author }) => fetchAuthorDetails(author.key)
+          );
+          const authorDetails = await Promise.all(authorPromises);
+          setAuthors(authorDetails.filter((author): author is AuthorDetails => author !== null));
+        }
+
         setError(null);
       } catch (err) {
         console.error('Error fetching book details:', err);
@@ -94,10 +122,12 @@ const BookDetail: React.FC = () => {
     fetchBookDetails();
   }, [bookId]);
 
-  const getDescription = (description: string | Description | undefined): string => {
-    if (!description) return 'No description available';
-    if (typeof description === 'string') return description;
-    return description.value || 'No description available';
+  const getDescription = (
+    description: string | Description | undefined
+  ): string => {
+    if (!description) return "No description available";
+    if (typeof description === "string") return description;
+    return description.value || "No description available";
   };
 
   if (loading) {
@@ -164,9 +194,9 @@ const BookDetail: React.FC = () => {
               {book.title}
             </Typography>
 
-            {book.authors && book.authors.length > 0 && (
+            {authors.length > 0 && (
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                by {book.authors.map((author) => author.name).join(", ")}
+                by {authors.map(author => author.name || author.personal_name).join(', ')}
               </Typography>
             )}
 
@@ -200,9 +230,9 @@ const BookDetail: React.FC = () => {
                 </Typography>
                 <Box display="flex" gap={1} flexWrap="wrap">
                   {book.subjects.slice(0, 10).map((subject, index) => (
-                    <Chip 
-                      key={index} 
-                      label={subject} 
+                    <Chip
+                      key={index}
+                      label={subject}
                       variant="outlined"
                       size="small"
                     />
