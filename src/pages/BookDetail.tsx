@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import {
   Container,
   Paper,
@@ -13,11 +13,12 @@ import {
 import { styled } from "@mui/material/styles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import axios from "axios";
+import Link from "@mui/material/Link";
 
 // Define more specific types for the API response
 interface Author {
   key: string;
-  name?: string;  // name might not be included in the response
+  name?: string; // name might not be included in the response
 }
 
 interface AuthorDetails {
@@ -34,8 +35,8 @@ interface Description {
 interface BookDetails {
   key: string;
   title: string;
-  authors?: Array<{ author: { key: string } }>;  // Work response format
-  author_name?: string[];  // Search response format
+  authors?: Array<{ author: { key: string } }>; // Work response format
+  author_name?: string[]; // Search response format
   description?: string | Description;
   publish_date?: string;
   covers?: number[];
@@ -66,7 +67,7 @@ const BookDetail: React.FC = () => {
         );
         return response.data;
       } catch (error) {
-        console.error('Error fetching author details:', error);
+        console.error("Error fetching author details:", error);
         return null;
       }
     };
@@ -77,16 +78,16 @@ const BookDetail: React.FC = () => {
       try {
         setLoading(true);
         // First try to fetch as a work
-        let response = await axios.get<BookDetails>(
-          `https://openlibrary.org/works/${bookId}.json`
-        ).catch(() => null);
+        let response = await axios
+          .get<BookDetails>(`https://openlibrary.org/works/${bookId}.json`)
+          .catch(() => null);
 
         // If work fetch fails, try as a book
         if (!response) {
           response = await axios.get<BookDetails>(
             `https://openlibrary.org/books/${bookId}.json`
           );
-          
+
           if (response.data.works?.[0]?.key) {
             const workKey = response.data.works[0].key;
             const workResponse = await axios.get<BookDetails>(
@@ -103,17 +104,23 @@ const BookDetail: React.FC = () => {
 
         // Fetch author details
         if (response.data.authors) {
-          const authorPromises = response.data.authors.map(
-            ({ author }) => fetchAuthorDetails(author.key)
+          const authorPromises = response.data.authors.map(({ author }) =>
+            fetchAuthorDetails(author.key)
           );
           const authorDetails = await Promise.all(authorPromises);
-          setAuthors(authorDetails.filter((author): author is AuthorDetails => author !== null));
+          setAuthors(
+            authorDetails.filter(
+              (author): author is AuthorDetails => author !== null
+            )
+          );
         }
 
         setError(null);
       } catch (err) {
-        console.error('Error fetching book details:', err);
-        setError('Failed to load book details. The book might not be available.');
+        console.error("Error fetching book details:", err);
+        setError(
+          "Failed to load book details. The book might not be available."
+        );
       } finally {
         setLoading(false);
       }
@@ -196,7 +203,19 @@ const BookDetail: React.FC = () => {
 
             {authors.length > 0 && (
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                by {authors.map(author => author.name || author.personal_name).join(', ')}
+                by{" "}
+                {authors.map((author, idx) => (
+                  <span key={author.key}>
+                    <Link
+                      component={RouterLink}
+                      to={`/author/${author.key.replace("/authors/", "")}`}
+                      underline="hover"
+                    >
+                      {author.name || author.personal_name}
+                    </Link>
+                    {idx < authors.length - 1 && ", "}
+                  </span>
+                ))}
               </Typography>
             )}
 
@@ -230,12 +249,7 @@ const BookDetail: React.FC = () => {
                 </Typography>
                 <Box display="flex" gap={1} flexWrap="wrap">
                   {book.subjects.slice(0, 10).map((subject, index) => (
-                    <Chip
-                      key={index}
-                      label={subject}
-                      variant="outlined"
-                      size="small"
-                    />
+                    <Chip key={index} label={subject} size="small" />
                   ))}
                 </Box>
               </Box>
