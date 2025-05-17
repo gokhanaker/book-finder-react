@@ -9,12 +9,18 @@ import {
   Button,
   CircularProgress,
   Grid,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import axios from "axios";
 import Link from "@mui/material/Link";
 import NotFound from "./NotFound"; // Adjust the path if needed
+import { addFavourite, removeFavourite, isFavourite } from "../utils/favourites";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { Book } from "../features/book/bookSlice"; // or your book type
 
 // Define more specific types for the API response
 interface Author {
@@ -44,6 +50,7 @@ interface BookDetails {
   subjects?: string[];
   publishers?: string[];
   works?: Array<{ key: string }>;
+  first_publish_year?: number;
 }
 
 const StyledGrid = styled(Grid)({
@@ -59,6 +66,7 @@ const BookDetail: React.FC = () => {
   const [authors, setAuthors] = useState<AuthorDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [favourited, setFavourited] = useState(false);
 
   useEffect(() => {
     const fetchAuthorDetails = async (authorKey: string) => {
@@ -67,28 +75,23 @@ const BookDetail: React.FC = () => {
           `https://openlibrary.org${authorKey}.json`
         );
         return response.data;
-      } catch (error) {
-        console.error("Error fetching author details:", error);
+      } catch {
         return null;
       }
     };
 
     const fetchBookDetails = async () => {
       if (!bookId) return;
-
       try {
         setLoading(true);
-        // First try to fetch as a work
         let response = await axios
           .get<BookDetails>(`https://openlibrary.org/works/${bookId}.json`)
           .catch(() => null);
 
-        // If work fetch fails, try as a book
         if (!response) {
           response = await axios.get<BookDetails>(
             `https://openlibrary.org/books/${bookId}.json`
           );
-
           if (response.data.works?.[0]?.key) {
             const workKey = response.data.works[0].key;
             const workResponse = await axios.get<BookDetails>(
@@ -114,14 +117,20 @@ const BookDetail: React.FC = () => {
               (author): author is AuthorDetails => author !== null
             )
           );
+        } else if (response.data.author_name) {
+          setAuthors(
+            response.data.author_name.map((name, idx) => ({
+              name,
+              key: `author-${idx}`,
+            }))
+          );
+        } else {
+          setAuthors([]);
         }
 
         setError(null);
       } catch (err) {
-        console.error("Error fetching book details:", err);
-        setError(
-          "Failed to load book details. The book might not be available."
-        );
+        setError("Failed to load book details. The book might not be available.");
       } finally {
         setLoading(false);
       }
@@ -130,9 +139,29 @@ const BookDetail: React.FC = () => {
     fetchBookDetails();
   }, [bookId]);
 
-  const getDescription = (
-    description: string | Description | undefined
-  ): string => {
+  useEffect(() => {
+    if (book) setFavourited(isFavourite(book.key));
+  }, [book]);
+
+  const handleToggleFavourite = () => {
+    if (!book) return;
+    if (favourited) {
+      removeFavourite(book.key);
+      setFavourited(false);
+    } else {
+      // Store minimal info for favourites
+      addFavourite({
+        key: book.key,
+        title: book.title,
+        author_name: authors.map((a) => a.name || a.personal_name || ""),
+        first_publish_year: book.first_publish_year,
+        cover_i: book.covers?.[0],
+      } as Book);
+      setFavourited(true);
+    }
+  };
+
+  const getDescription = (description: string | Description | undefined) => {
     if (!description) return "No description available";
     if (typeof description === "string") return description;
     return description.value || "No description available";
@@ -152,13 +181,22 @@ const BookDetail: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate(-1)}
-        sx={{ mt: 4, mb: 2 }}
-      >
-        Back to Search
-      </Button>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} mb={2}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/")}
+          variant="outlined"
+        >
+          Back to Search
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<FavoriteIcon />}
+          onClick={() => navigate("/favourites")}
+        >
+          Favourites
+        </Button>
+      </Box>
       <Paper elevation={2} sx={{ p: 4, mt: 2 }}>
         <StyledGrid container>
           {/* Book Cover */}
@@ -192,25 +230,44 @@ const BookDetail: React.FC = () => {
               width: { xs: "100%", md: "calc(66.666% - 32px)" },
             }}
           >
-            <Typography variant="h4" gutterBottom>
-              {book.title}
-            </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="h4" gutterBottom>
+                {book.title}
+              </Typography>
+              <Tooltip
+                title={favourited ? "Remove from favourites" : "Add to favourites"}
+              >
+                <IconButton
+                  onClick={handleToggleFavourite}
+                  color={favourited ? "error" : "default"}
+                >
+                  {favourited ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                </IconButton>
+              </Tooltip>
+            </Box>
 
             {authors.length > 0 && (
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 by{" "}
-                {authors.map((author, idx) => (
-                  <span key={author.key}>
-                    <Link
-                      component={RouterLink}
-                      to={`/author/${author.key.replace("/authors/", "")}`}
-                      underline="hover"
-                    >
-                      {author.name || author.personal_name}
-                    </Link>
-                    {idx < authors.length - 1 && ", "}
-                  </span>
-                ))}
+                {authors.map((author, idx) =>
+                  author.key.startsWith("/authors/") ? (
+                    <span key={author.key}>
+                      <Link
+                        component={RouterLink}
+                        to={`/author/${author.key.replace("/authors/", "")}`}
+                        underline="hover"
+                      >
+                        {author.name}
+                      </Link>
+                      {idx < authors.length - 1 && ", "}
+                    </span>
+                  ) : (
+                    <span key={author.key}>
+                      {author.name}
+                      {idx < authors.length - 1 && ", "}
+                    </span>
+                  )
+                )}
               </Typography>
             )}
 
@@ -244,7 +301,12 @@ const BookDetail: React.FC = () => {
                 </Typography>
                 <Box display="flex" gap={1} flexWrap="wrap">
                   {book.subjects.slice(0, 10).map((subject, index) => (
-                    <Chip key={index} label={subject} size="small" />
+                    <Chip
+                      key={index}
+                      label={subject}
+                      variant="outlined"
+                      size="small"
+                    />
                   ))}
                 </Box>
               </Box>
