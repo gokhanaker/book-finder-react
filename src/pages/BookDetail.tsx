@@ -14,6 +14,7 @@ import { styled } from "@mui/material/styles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import axios from "axios";
 import Link from "@mui/material/Link";
+import NotFound from "./NotFound"; // Adjust the path if needed
 
 // Define more specific types for the API response
 interface Author {
@@ -146,13 +147,7 @@ const BookDetail: React.FC = () => {
   }
 
   if (error || !book) {
-    return (
-      <Container>
-        <Typography color="error" mt={4}>
-          {error || "Book not found"}
-        </Typography>
-      </Container>
-    );
+    return <NotFound />;
   }
 
   return (

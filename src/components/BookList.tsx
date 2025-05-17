@@ -35,6 +35,16 @@ const BookList: React.FC = () => {
   if (status === "failed")
     return <Typography color="error">{error}</Typography>;
 
+  if (status === "succeeded" && books.length === 0) {
+    return (
+      <Box textAlign="center" mt={4}>
+        <Typography variant="h6" color="text.secondary">
+          No books found for your search.
+        </Typography>
+      </Box>
+    );
+  }
+
   const handleBookClick = (bookKey: string) => {
     // Extract the full ID including OL prefix
     let workId;

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import SearchPage from "./pages/SearchPage";
 import BookDetail from "./pages/BookDetail";
 import AuthorDetail from "./pages/AuthorDetail";
+import NotFound from "./pages/NotFound";
 
 const App: React.FC = () => {
   return (
@@ -11,7 +12,7 @@ const App: React.FC = () => {
         <Route path="/" element={<SearchPage />} />
         <Route path="/book/:bookId" element={<BookDetail />} />
         <Route path="/author/:authorId" element={<AuthorDetail />} />
-        {}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
