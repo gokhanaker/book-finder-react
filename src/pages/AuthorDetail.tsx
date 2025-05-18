@@ -10,15 +10,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import axios from "axios";
-
-interface AuthorDetails {
-  name: string;
-  personal_name?: string;
-  birth_date?: string;
-  death_date?: string;
-  bio?: string | { value: string };
-  photos?: number[];
-}
+import { AuthorDetails } from "../types";
 
 const AuthorDetail: React.FC = () => {
   const { authorId } = useParams<{ authorId: string }>();
@@ -119,4 +111,4 @@ const AuthorDetail: React.FC = () => {
   );
 };
 
-export default AuthorDetail; 
+export default AuthorDetail;

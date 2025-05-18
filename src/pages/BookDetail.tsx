@@ -16,42 +16,16 @@ import { styled } from "@mui/material/styles";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import axios from "axios";
 import Link from "@mui/material/Link";
-import NotFound from "./NotFound"; // Adjust the path if needed
-import { addFavourite, removeFavourite, isFavourite } from "../utils/favourites";
+import NotFound from "./NotFound";
+import {
+  addFavourite,
+  removeFavourite,
+  isFavourite,
+} from "../utils/favourites";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import { Book } from "../features/book/bookSlice"; // or your book type
-
-// Define more specific types for the API response
-interface Author {
-  key: string;
-  name?: string; // name might not be included in the response
-}
-
-interface AuthorDetails {
-  personal_name?: string;
-  name: string;
-  key: string;
-}
-
-interface Description {
-  type?: string;
-  value: string;
-}
-
-interface BookDetails {
-  key: string;
-  title: string;
-  authors?: Array<{ author: { key: string } }>; // Work response format
-  author_name?: string[]; // Search response format
-  description?: string | Description;
-  publish_date?: string;
-  covers?: number[];
-  subjects?: string[];
-  publishers?: string[];
-  works?: Array<{ key: string }>;
-  first_publish_year?: number;
-}
+import { Book } from "../features/book/bookSlice";
+import { AuthorDetails, BookDetails, BookDetailDescription } from "../types";
 
 const StyledGrid = styled(Grid)({
   display: "flex",
@@ -130,7 +104,9 @@ const BookDetail: React.FC = () => {
 
         setError(null);
       } catch (err) {
-        setError("Failed to load book details. The book might not be available.");
+        setError(
+          "Failed to load book details. The book might not be available."
+        );
       } finally {
         setLoading(false);
       }
@@ -149,7 +125,6 @@ const BookDetail: React.FC = () => {
       removeFavourite(book.key);
       setFavourited(false);
     } else {
-      // Store minimal info for favourites
       addFavourite({
         key: book.key,
         title: book.title,
@@ -161,7 +136,9 @@ const BookDetail: React.FC = () => {
     }
   };
 
-  const getDescription = (description: string | Description | undefined) => {
+  const getDescription = (
+    description: string | BookDetailDescription | undefined
+  ) => {
     if (!description) return "No description available";
     if (typeof description === "string") return description;
     return description.value || "No description available";
@@ -181,7 +158,13 @@ const BookDetail: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} mb={2}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mt={2}
+        mb={2}
+      >
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate("/")}
@@ -235,7 +218,9 @@ const BookDetail: React.FC = () => {
                 {book.title}
               </Typography>
               <Tooltip
-                title={favourited ? "Remove from favourites" : "Add to favourites"}
+                title={
+                  favourited ? "Remove from favourites" : "Add to favourites"
+                }
               >
                 <IconButton
                   onClick={handleToggleFavourite}

@@ -46,14 +46,13 @@ const BookList: React.FC = () => {
   }
 
   const handleBookClick = (bookKey: string) => {
-    // Extract the full ID including OL prefix
     let workId;
     if (bookKey.includes("/works/")) {
       // Format: /works/OL123W
-      workId = bookKey.split("/works/")[1]?.split("W")[0] + "W"; // Just get the ID part
+      workId = bookKey.split("/works/")[1]; // Get the ID part
     } else if (bookKey.includes("/books/")) {
       // Format: /books/OL123M
-      workId = bookKey.split("/books/")[1]?.split("M")[0] + "M"; // Just get the ID part
+      workId = bookKey.split("/books/")[1]; // Get the ID part
     }
 
     if (workId) {
@@ -61,7 +60,6 @@ const BookList: React.FC = () => {
     }
   };
 
-  // Displays the book list
   return (
     <Box sx={{ mt: 2 }}>
       <StyledGrid container>

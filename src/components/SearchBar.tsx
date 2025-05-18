@@ -1,4 +1,3 @@
-// src/components/SearchBar.tsx
 import React, { useState } from "react";
 import { TextField, Button, Box } from "@mui/material";
 import { useAppDispatch } from "../app/hooks";
@@ -10,18 +9,17 @@ const SearchBar: React.FC = () => {
 
   const handleSearch = () => {
     if (query.trim()) {
-      // Dispatches the fetchBooks action with the query
       dispatch(fetchBooks(query));
     }
   };
 
   return (
-    <Box 
-      display="flex" 
-      gap={2} 
+    <Box
+      display="flex"
+      gap={2}
       sx={{
-        width: { xs: '100%', sm: '80%', md: '60%', lg: '50%' },
-        mx: 'auto',  // centers the box
+        width: { xs: "100%", sm: "80%", md: "60%", lg: "50%" },
+        mx: "auto",
       }}
     >
       <TextField
@@ -33,11 +31,7 @@ const SearchBar: React.FC = () => {
         onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         sx={{ flex: 1 }}
       />
-      <Button 
-        variant="contained" 
-        onClick={handleSearch}
-        sx={{ px: 4 }}  // wider button
-      >
+      <Button variant="contained" onClick={handleSearch} sx={{ px: 4 }}>
         Search
       </Button>
     </Box>
