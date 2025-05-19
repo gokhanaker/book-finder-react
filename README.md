@@ -1,6 +1,6 @@
 # Book Finder React App
 
-This is a mini React app that uses public `Open Library API` to fetch book and author related data. User can Search a book, View book details, View author details and Highlight some books as his Favourites
+This is a mini React app that uses public `Open Library API` as backend. User can search a book, view book details, view author details and highlight some books as his favourites
 
 ## Main Dependencies
 
